@@ -6,11 +6,21 @@ from typing import DefaultDict, List, Tuple
 
 import pandas as pd
 
+DEFAULT_PALETTE = (
+    "#fd4f38Red",
+    "#06a725Green",
+    "#3995fdBlue",
+    "#ffd54bYellow",
+    "#62dad4Cyan",
+    "#d171dfMagenta",
+)
 BASE = "Base Layer"
 GRID = "#eeeeeeGrid"
 AXES = "Axes"
-LINES = "#000000Lines"
-LAYER_ORDER = [BASE, GRID, AXES, LINES]
+BLACK_LINES = "#000000BlackLines"
+
+
+# These match the colours of the rider's scarfs on linerider.com
 
 
 @dataclass
@@ -85,6 +95,7 @@ class Axes:
 
     lines: DefaultDict[str, List[Segment]] = field(default_factory=lambda: defaultdict(list))
     riders: List[Rider] = field(default_factory=list)
+    layer_order: List[str] = field(default_factory=lambda: [BASE, GRID, AXES].copy())
 
     def convert(self, x, y):
         # Bound check
@@ -103,7 +114,9 @@ class Axes:
 
         return x_, -y_
     
-    def draw_curve(self, points):
+    def draw_curve(self, points, name="Line", colour=BLACK_LINES):
+        if colour not in self.layer_order:
+            self.layer_order.append(colour)
         prev_xy = None
         spawn = None
         # TODO: could draw partial lines for segments that are only partially on the plot
@@ -112,7 +125,7 @@ class Axes:
             if None not in (xy, prev_xy):
                 if spawn is None:
                     spawn = prev_xy
-                self.lines[LINES].append(Segment(*prev_xy, *xy))
+                self.lines[colour].append(Segment(*prev_xy, *xy))
             prev_xy = xy
 
         assert spawn is not None, "No line segments to draw within axes bounds"
@@ -125,7 +138,7 @@ class Axes:
             (x, y)
         )
         for (p1, p2) in zip(platform, platform[1:]):
-            self.lines[LINES].append(Segment(*p1, *p2))
+            self.lines[colour].append(Segment(*p1, *p2))
         self.riders.append(Rider(x - 35, y - 35))
 
 
@@ -181,7 +194,7 @@ class Axes:
 
     def save(self, filename):
         lines, layers = [], []
-        for layer_num, layer_name in enumerate(LAYER_ORDER):
+        for layer_num, layer_name in enumerate(self.layer_order):
             layers.append(Layer(layer_name, layer_num).serialise())
             for seg in self.lines[layer_name]:
                 lines.append(seg.serialise(len(lines), layer_num))
@@ -276,7 +289,8 @@ class Axes:
             x += char_w + pad
 
 def lossrider(
-        dfs, x, y, 
+        df, x, y, 
+        hue=None,
         filename="lossrider.save", 
         width=3000, height=1000, 
         xlim=(None, None), ylim=(None, None),
@@ -286,10 +300,10 @@ def lossrider(
         xticklabels=(), yticklabels=(),
         tick_fontsize=100,
         label_fontsize=100,
+        palette=DEFAULT_PALETTE,
         grid=True,
+        legend=None,
     ):
-    if isinstance(dfs, pd.DataFrame):
-        dfs = [dfs]
 
     ax = Axes(
         x=0, y=0, 
@@ -303,9 +317,19 @@ def lossrider(
         label_fontsize=label_fontsize,
         grid=grid,
     )
-    for df in dfs:
-        curve = sorted(zip(df[x].to_list(), df[y].to_list()))
-        ax.draw_curve(curve)
+
+    if hue is not None:
+        line_names = df[hue].unique()
+        if len(line_names) > 6:
+            raise ValueError(
+                f"Trying to plot {len(line_names)} lines, but linerider.com only support 6 riders :("
+            )
+        for line_name, colour in zip(line_names, palette):
+            line_df = df[df[hue] == line_name]
+            curve = sorted(zip(line_df[x].to_list(), line_df[y].to_list()))
+            ax.draw_curve(curve, line_name, f"{colour}Layer")
+    else:
+        ax.draw_curve(sorted(zip(df[x].to_list(), df[y].to_list())))
 
     ax.draw_axes()
     ax.save(f"{filename}.json")
