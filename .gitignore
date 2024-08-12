@@ -1,0 +1,7 @@
+*.mp4
+*.mp3
+*.json
+
+__pycache__
+venv
+figures
