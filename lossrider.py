@@ -4,8 +4,7 @@ import json
 from math import log, sin, cos
 from typing import DefaultDict, List, Tuple
 
-import pandas as pd
-
+# These match the colours of the rider's scarfs on linerider.com
 DEFAULT_PALETTE = (
     "#fd4f38Red",
     "#06a725Green",
@@ -18,9 +17,6 @@ BASE = "Base Layer"
 GRID = "#eeeeeeGrid"
 AXES = "Axes"
 BLACK_LINES = "#000000BlackLines"
-
-
-# These match the colours of the rider's scarfs on linerider.com
 
 
 @dataclass
@@ -95,7 +91,7 @@ class Axes:
 
     lines: DefaultDict[str, List[Segment]] = field(default_factory=lambda: defaultdict(list))
     riders: List[Rider] = field(default_factory=list)
-    layer_order: List[str] = field(default_factory=lambda: [BASE, GRID, AXES].copy())
+    legend: List[Tuple[str]] = field(default_factory=list)
 
     def convert(self, x, y):
         # Bound check
@@ -115,8 +111,9 @@ class Axes:
         return x_, -y_
     
     def draw_curve(self, points, name="Line", colour=BLACK_LINES):
-        if colour not in self.layer_order:
-            self.layer_order.append(colour)
+        if colour not in self.lines:
+            self.legend.append((name, colour))
+
         prev_xy = None
         spawn = None
         # TODO: could draw partial lines for segments that are only partially on the plot
@@ -191,10 +188,47 @@ class Axes:
                 theta=-3.14149/2,
             )
 
+    def draw_legend(self, loc=(1, 1), fontsize=100, title=None):
+        x_pad, y_pad = fontsize * 1.5, fontsize
+        x = self.x + self.width * loc[0]
+        y = -(self.y + self.height * loc[1])
+        handle_width = fontsize * 2
+        handle_thickness = 4
+        row_y = y + y_pad
+        handle_x = x + x_pad
+        label_x = x + handle_width + x_pad * 2
+
+        if title is not None:
+            row_y += fontsize + y_pad
+
+        max_label_width = 0
+        for name, colour in self.legend:
+            # Handle (the coloured line)
+            handle_y = row_y + fontsize / 2
+            for _ in range(handle_thickness):
+                self.lines[colour].append(Segment(handle_x, handle_y, handle_x + handle_width, handle_y))
+                handle_y += 1.75
+
+            # Label (the text)
+            w = self.text(str(name), label_x, row_y, fontsize)
+            max_label_width = max(w, max_label_width)
+            row_y += fontsize + y_pad
+
+        # Bounding box & title
+        l, r = x, label_x + max_label_width + x_pad
+        t, b = y, row_y
+        self.lines[AXES].extend([Segment(l, t, r, t)])
+        self.lines[AXES].extend([Segment(r, t, r, b)])
+        self.lines[AXES].extend([Segment(r, b, l, b)])
+        self.lines[AXES].extend([Segment(l, b, l, t)])
+        if title:
+            self.text(title, (l + r) / 2, t + y_pad, fontsize, align="center_x")
+
 
     def save(self, filename):
         lines, layers = [], []
-        for layer_num, layer_name in enumerate(self.layer_order):
+        layer_order = [BASE, GRID, AXES] + [colour for (_, colour) in self.legend]
+        for layer_num, layer_name in enumerate(layer_order):
             layers.append(Layer(layer_name, layer_num).serialise())
             for seg in self.lines[layer_name]:
                 lines.append(seg.serialise(len(lines), layer_num))
@@ -215,6 +249,8 @@ class Axes:
 
 
     def text(self, text, X, Y, h, align="", theta=0):
+        text = text.lower()
+
         aspect = 0.55
         padding_frac = .4
 
@@ -260,6 +296,8 @@ class Axes:
             "9": (1,   0, [(1, .5), (0, .5), (0, 0), (1, 0), (1, 1), (0, 1)]),
             ".": (.25, 0, [(.1, 1), (.9, 1), (.9, .9), (.1, .9), (.1, 1)]),
             "/": (1,   0, [(0, 1), (1, 0)]),
+            "_": (.8,  0, [(0, 1), (1, 1)]),
+            "-": (.8,  0, [(0, .5), (1, .5)]),
             " ": (1.1, 0, []),
         }
         w = h * aspect
@@ -288,6 +326,9 @@ class Axes:
             self.lines[AXES].extend([Segment(*p1, *p2) for (p1, p2) in zip(points[:-1], points[1:])])
             x += char_w + pad
 
+        return text_width
+
+
 def lossrider(
         df, x, y, 
         hue=None,
@@ -297,12 +338,11 @@ def lossrider(
         logy=False, logx=False,
         xlabel="", ylabel="",
         xticks=(), yticks=(),
-        xticklabels=(), yticklabels=(),
-        tick_fontsize=100,
+        xticklabels=(), yticklabels=(), tick_fontsize=100,
         label_fontsize=100,
         palette=DEFAULT_PALETTE,
         grid=True,
-        legend=None,
+        legend=False, legend_loc=(1, 1), legend_fontsize=100,
     ):
 
     ax = Axes(
@@ -332,6 +372,8 @@ def lossrider(
         ax.draw_curve(sorted(zip(df[x].to_list(), df[y].to_list())))
 
     ax.draw_axes()
+    if legend:
+        ax.draw_legend(legend_loc, legend_fontsize, hue)
     ax.save(f"{filename}.json")
 
     try:
