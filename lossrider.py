@@ -1,3 +1,5 @@
+# This project is a fun joke, please don't read the code too carefully :D 
+
 from collections import defaultdict
 from dataclasses import dataclass, field
 import json
@@ -16,7 +18,7 @@ DEFAULT_PALETTE = (
 BASE = "Base Layer"
 GRID = "#eeeeeeGrid"
 AXES = "Axes"
-BLACK_LINES = "#000000BlackLines"
+BLACK = "#000000Black"
 
 
 @dataclass
@@ -110,7 +112,7 @@ class Axes:
 
         return x_, -y_
     
-    def draw_curve(self, points, name="Line", colour=BLACK_LINES):
+    def draw_curve(self, points, name="Line", colour=BLACK):
         if colour not in self.lines:
             self.legend.append((name, colour))
 
@@ -181,7 +183,7 @@ class Axes:
         if self.ylabel:
             self.text(
                 self.ylabel, 
-                self.x - 2 * (tick_size + self.tick_fontsize + self.label_fontsize), 
+                self.x - tick_size - 2 * (self.tick_fontsize + self.label_fontsize), 
                 self.y - self.height / 2, 
                 self.label_fontsize, 
                 align="center_x,center_y",
@@ -225,7 +227,7 @@ class Axes:
             self.text(title, (l + r) / 2, t + y_pad, fontsize, align="center_x")
 
 
-    def save(self, filename):
+    def save(self, outfile):
         lines, layers = [], []
         layer_order = [BASE, GRID, AXES] + [colour for (_, colour) in self.legend]
         for layer_num, layer_name in enumerate(layer_order):
@@ -244,7 +246,7 @@ class Axes:
             "riders": [rider.serialise() for rider in self.riders],
         }
         
-        with open(filename, 'w') as f:
+        with open(outfile, 'w') as f:
             f.write(json.dumps(output))
 
 
@@ -284,6 +286,7 @@ class Axes:
             "x": (1,   0, [(0, t), (1, 1), (.5, .5+t/2), (0, 1), (1, t)]),
             "y": (1,   t, [(0, 0), (0, 1-t), (1, 1-t), (1, 0), (1, 1), (0, 1)]),
             "z": (1,   0, [(0, t), (1, t), (0, 1), (1, 1)]),
+            "μ": (1,   t, [(0, 1), (0, 0), (0, 1-t), (1, 1-t), (1, 0)]),
             "0": (1,   0, [(0, 0), (0, 1), (1, 1), (1, 0), (0, 0)]),
             "1": (.6,  0, [(.1, .1), (.5, 0), (.5, 1), (.1, 1), (.9, 1)]),
             "2": (1,   0, [(0, 0), (1, 0), (1, .5), (0, .5), (0, 1), (1, 1)]),
@@ -297,7 +300,7 @@ class Axes:
             ".": (.25, 0, [(.1, 1), (.9, 1), (.9, .9), (.1, .9), (.1, 1)]),
             "/": (1,   0, [(0, 1), (1, 0)]),
             "_": (.8,  0, [(0, 1), (1, 1)]),
-            "-": (.8,  0, [(0, .5), (1, .5)]),
+            "-": (.8,  0, [(0, m), (1, m)]),
             " ": (1.1, 0, []),
         }
         w = h * aspect
@@ -306,7 +309,10 @@ class Axes:
 
         # Alignment
         x, y = 0, 0
-        text_width = sum(w * FONT[char][0] + pad for char in text)
+        try:
+            text_width = sum(w * FONT[char][0] + pad for char in text)
+        except KeyError:
+            raise ValueError(f"LossRider cannot render a character in this string '{text}'")
         if "center_x" in align:
             x -= text_width / 2
         elif "right" in align:
@@ -332,18 +338,31 @@ class Axes:
 def lossrider(
         df, x, y, 
         hue=None,
-        filename="lossrider.save", 
+        outfile="lossrider.save", 
         width=3000, height=1000, 
         xlim=(None, None), ylim=(None, None),
         logy=False, logx=False,
-        xlabel="", ylabel="",
+        xlabel=None, ylabel=None,
         xticks=(), yticks=(),
-        xticklabels=(), yticklabels=(), tick_fontsize=100,
-        label_fontsize=100,
+        xticklabels=(), yticklabels=(), 
         palette=DEFAULT_PALETTE,
         grid=True,
-        legend=False, legend_loc=(1, 1), legend_fontsize=100,
+        legend=False, legend_loc=(1, 1),
+        fontsize=100,
+        tick_fontsize=None,
+        label_fontsize=None,
+        legend_fontsize=None,
     ):
+    if xlabel is None:
+        xlabel = x
+    if ylabel is None:
+        ylabel = y
+    if tick_fontsize is None:
+        tick_fontsize = fontsize
+    if label_fontsize is None:
+        label_fontsize = fontsize
+    if legend_fontsize is None:
+        legend_fontsize = fontsize
 
     ax = Axes(
         x=0, y=0, 
@@ -374,7 +393,7 @@ def lossrider(
     ax.draw_axes()
     if legend:
         ax.draw_legend(legend_loc, legend_fontsize, hue)
-    ax.save(f"{filename}.json")
+    ax.save(f"{outfile}.json")
 
     try:
         from IPython.display import IFrame
