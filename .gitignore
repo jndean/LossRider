@@ -1,7 +1,7 @@
 *.mp4
 *.mp3
-*.json
 
 __pycache__
+.vscode
 venv
 figures
