@@ -4,19 +4,22 @@ Finally, a Python plotting library that can (only) output __Line Rider__ maps!
 <p align="center" width="100%">
     <br>
     <img  src="https://github.com/user-attachments/assets/219ac1fa-57a5-4c7f-bab3-7bbb5a78a70b">
+    <br>
 </p>
 
 ML practitioners can experience gradient descent like never before!
 <p align="center" width="100%">
     <br>
     <img  src="https://github.com/user-attachments/assets/025fb50e-7b03-452e-8b45-a15e258012db">
+    <br>
 </p>
 
 
 With support for all important features of a line graph.
 <p align="center" width="100%">
-    <br><br>
+    <br>
     <img  src="https://github.com/user-attachments/assets/da32dd51-ba91-4d3d-9bff-30c5f6c051d8">
+    <br>
 </p>
 
 
@@ -24,6 +27,7 @@ And don't forget interactive plotting in Jupyter Notebooks!
 <p align="center" width="100%">
     <br>
     <img src="https://github.com/user-attachments/assets/12bed788-a3a3-441c-a991-a6565b526e00">
+    <br>
 </p>
 
 # Installation

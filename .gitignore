@@ -1,7 +1,9 @@
 *.mp4
 *.mp3
+*.egg-info
 
 __pycache__
 .vscode
 venv
 figures
+dist
