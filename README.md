@@ -30,6 +30,8 @@ And don't forget interactive plotting in Jupyter Notebooks!
     <br>
 </p>
 
+The above plots all use data from the [Unit-Scaled Maximal Update Parameterization](https://arxiv.org/abs/2407.17465) paper which proposes a more usable version of μP.
+
 # Installation
 ```bash
 pip install lossrider
