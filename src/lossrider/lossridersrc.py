@@ -4,7 +4,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 import json
 from math import log, sin, cos
-from typing import DefaultDict, List, Tuple
+from typing import DefaultDict, List, Tuple, Optional, Dict, Any
+import pandas as pd
 
 # These match the colours of the rider's scarfs on linerider.com
 DEFAULT_PALETTE = (
@@ -400,3 +401,55 @@ def lossrider(
         return IFrame("https://www.linerider.com/", 900, 600)
     except ImportError:
         pass
+
+def linerider_from_wandb(
+    project: str,
+    entity: Optional[str] = None,
+    filters: Optional[Dict[str, Any]] = None,
+    x: str = "_step",
+    y: str = "loss",
+    hue: Optional[str] = "run.name",
+    outfile: str = "lossrider_wandb.save",
+    **kwargs
+) -> None:
+    """
+    Fetch data from Weights & Biases and create a LossRider visualization.
+
+    Args:
+        project (str): The name of the wandb project.
+        entity (str, optional): The entity (username or team name) for the project.
+        filters (dict, optional): Filters to apply when querying runs.
+        x (str): The metric to use for the x-axis. Defaults to "_step".
+        y (str): The metric to use for the y-axis. Defaults to "loss".
+        hue (str, optional): The column to use for differentiating lines. Defaults to "run.name".
+        outfile (str): The name of the output file. Defaults to "lossrider_wandb.save".
+        **kwargs: Additional keyword arguments to pass to the lossrider function.
+
+    Returns:
+        None
+    """
+    import wandb
+    api = wandb.Api()
+    runs = api.runs(f"{entity}/{project}" if entity else project, filters=filters)
+    all_data = []
+    for run in runs:
+        history = run.history(keys=[x, y])
+        history['run.name'] = run.name
+        all_data.append(history)
+
+    df = pd.concat(all_data, ignore_index=True)
+    xlim = (df[x].min(), df[x].max())
+    ylim = (df[y].min(), df[y].max())
+    lossrider(
+        df,
+        x=x,
+        y=y,
+        hue=hue,
+        outfile=outfile,
+        xlim=xlim,
+        ylim=ylim,
+        xlabel=x,
+        ylabel=y,
+        legend=True,
+        **kwargs
+    )
