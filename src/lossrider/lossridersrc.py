@@ -4,7 +4,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 import json
 from math import log, sin, cos
-from typing import DefaultDict, List, Tuple
+from typing import DefaultDict, List, Tuple, Optional, Dict, Any
+import pandas as pd
 
 # These match the colours of the rider's scarfs on linerider.com
 DEFAULT_PALETTE = (
@@ -401,11 +402,6 @@ def lossrider(
     except ImportError:
         pass
 
-import wandb
-import pandas as pd
-from typing import List, Optional, Dict, Any
-
-
 def linerider_from_wandb(
     project: str,
     entity: Optional[str] = None,
@@ -432,6 +428,7 @@ def linerider_from_wandb(
     Returns:
         None
     """
+    import wandb
     api = wandb.Api()
     runs = api.runs(f"{entity}/{project}" if entity else project, filters=filters)
     all_data = []
