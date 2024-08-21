@@ -1,3 +1,5 @@
+# Copyright (c) 2024 Josef Dean. All rights reserved.
+
 # This project is a fun joke, please don't read the code too carefully :D 
 
 from collections import defaultdict
@@ -5,7 +7,9 @@ from dataclasses import dataclass, field
 import json
 from math import log, sin, cos
 from typing import DefaultDict, List, Tuple, Optional, Dict, Any
+
 import pandas as pd
+
 
 # These match the colours of the rider's scarfs on linerider.com
 DEFAULT_PALETTE = (
@@ -402,7 +406,8 @@ def lossrider(
     except ImportError:
         pass
 
-def linerider_from_wandb(
+
+def lossrider_from_wandb(
     project: str,
     entity: Optional[str] = None,
     filters: Optional[Dict[str, Any]] = None,

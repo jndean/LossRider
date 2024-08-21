@@ -1,1 +1,1 @@
-from .lossridersrc import lossrider
+from .lossridersrc import lossrider, lossrider_from_wandb

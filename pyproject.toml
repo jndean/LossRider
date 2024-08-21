@@ -1,12 +1,15 @@
 [project]
 name = "lossrider"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="Josef Dean", email="email@josefdean.co.uk" },
 ]
 description = "A plotting library that create Line Rider maps"
 readme = "README.md"
 requires-python = ">=3.6"
+dependencies = [
+  "pandas",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
