@@ -66,3 +66,11 @@ The above produces the below plot
 
 ![lossridergif_sweep](https://github.com/user-attachments/assets/84cc70ff-a28c-4bc6-9ddc-00dbec9e5063)
 
+# Related Work
+
+The team at wandb [_claim_ to have had this idea already](https://x.com/BEBischof/status/1825918504253665436).
+
+Ge. et al. have [definitely already published in this area](https://x.com/albert_ge_95/status/1826747364465672271). We note the unique contributions of our work are:
+ - successfully scaling beyond toy datasets such as MNIST, using models with up to 1B parameters
+ - evaluation on a variety of down-stream tasks
+ - cool gifs?
